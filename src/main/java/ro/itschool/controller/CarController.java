@@ -1,10 +1,16 @@
 package ro.itschool.controller;
 
+import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import ro.itschool.entity.Car;
@@ -27,8 +33,56 @@ public class CarController {
 
     @PostMapping(value = "/add")
     public String processForm(@ModelAttribute(value = "car") Car car) {
+        car.setAddDate(LocalDate.now());
         carRepository.save(car);
         return "redirect:/index";
     }
-//    ----------------------------------------------------------------
+    //----------------------------------------------------------------
+
+    //--------------------Sell car by id----------------------------
+    @RequestMapping(value = "/sell/{id}")
+    public String deleteCar(@PathVariable Integer id) {
+        Optional<Car> optionalCar = carRepository.findById(id);
+        optionalCar.ifPresent(car -> {
+            car.setSold(true);
+            car.setSoldDate(LocalDate.now());
+            carRepository.save(car);
+        });
+        return "redirect:/index";
+    }
+    //----------------------------------------------------------------
+
+    //--------------------Edit car by id---------------------------- /car/delete/' + ${car.carId}
+    @RequestMapping(value = "/edit/{id}")
+    public String editCar(@PathVariable Integer id, Model model) {
+        model.addAttribute("carToBeEdited", carRepository.findById(id));
+        return "edit-car";
+    }
+
+    @RequestMapping(value = "/edit")
+    public String editAndSaveEditedCar(@ModelAttribute(value = "car") Car car) {
+        carRepository.save(car);
+        return "redirect:/index";
+    }
+    //----------------------------------------------------------------
+
+
+    //--------------View sold cars--------------------------------
+    @RequestMapping(value = "/sold")
+    public String viewSoldCars(Model model) {
+
+        List<Car> soldCars = carRepository.findSoldCars();
+        model.addAttribute("soldCars", Objects.requireNonNullElseGet(soldCars, ArrayList::new));
+        return "sold-cars";
+    }
+    //------------------------------------------------------------
+
+    //-------------Search car by keyword------------------------
+
+//    @RequestMapping(value = "/search")
+//    public String searchCars(Model model, String keyword) {
+//        model.addAttribute("cars", carRepository.findCarByKeyword(keyword));
+//        return "redirect:/index";
+//    }
+    //------------------------------------------------------------
 }
